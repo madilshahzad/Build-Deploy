@@ -1,5 +1,10 @@
 name: Build and Push Docker Images
 
+permissions:
+  id-token: write
+  contents: read
+
+  
 on:
   workflow_call: # For reusable workflows
     secrets:
@@ -71,12 +76,12 @@ jobs:
           path: another-repo                                      # Target directory for the repository
     
 
-      # AWS Authentication
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ secrets.ROLE_NAME }}
           aws-region: ${{ secrets.AWS_REGION }}
+          audience: sts.amazonaws.com
 
       # Log in to Amazon ECR
       - name: Log in to Amazon ECR
