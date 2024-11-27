@@ -34,8 +34,22 @@ on:
       IMAGE_TAG_DEPLOY:
         description: Image Tag to be deployed
         value: ${{ jobs.build_push_docker.outputs.IMAGE_TAG }}
+
+  workflow_dispatch:
+    inputs:
+      DOCKERFILE_PATH:
+        description: Path to the Dockerfile
+        required: false
+        default: "./Dockerfile"
+      APP_NAME:
+        description: Application Name
+        required: true
+      CONTEXT_PATH:
+        description: Docker build context
+        required: false
+        default: "./"
+
         
-  workflow_dispatch: # Add workflow_dispatch trigger
   repository_dispatch: # Add repository_dispatch trigger
     types:
       - trigger-build # Custom event type name
