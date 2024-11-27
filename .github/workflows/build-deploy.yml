@@ -1,7 +1,7 @@
 name: Build and Push Docker Images
 
 on:
-  workflow_call:
+  workflow_call: # For reusable workflows
     secrets:
       AWS_ACCOUNT_ID:
         description: AWS Account ID
@@ -34,6 +34,10 @@ on:
       IMAGE_TAG_DEPLOY:
         description: Image Tag to be deployed
         value: ${{ jobs.build_push_docker.outputs.IMAGE_TAG }}
+
+  repository_dispatch: # Add repository_dispatch trigger
+    types:
+      - trigger-build # Custom event type name
 
 jobs:
   build_push_docker:
