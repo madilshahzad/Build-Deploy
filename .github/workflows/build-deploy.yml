@@ -92,25 +92,34 @@ jobs:
       - name: Get the latest tag
         id: latest-tag
         run: |
+          # Fetch the latest tag
           LATEST_TAG=$(aws ecr describe-images \
             --repository-name ${{ secrets.ECR_REPOSITORY }} \
             --region ${{ secrets.AWS_REGION }} \
             --query 'sort_by(imageDetails,&imagePushedAt)[-1].imageTags[0]' \
             --output text)
       
+          # Debug the fetched tag
+          echo "Fetched LATEST_TAG: $LATEST_TAG"
+      
+          # Check for invalid or empty values
           if [ "$LATEST_TAG" == "None" ] || [ -z "$LATEST_TAG" ]; then
             TAG="v1"
           else
-            # Extract the numeric part of the tag and increment it
-            TAG="v$((${LATEST_TAG#v} + 1))"
+            # Ensure the tag starts with 'v' and increment the numeric part
+            if [[ "$LATEST_TAG" =~ ^v[0-9]+$ ]]; then
+              TAG="v$((${LATEST_TAG#v} + 1))"
+            else
+              echo "Error: Invalid tag format detected in LATEST_TAG: $LATEST_TAG"
+              exit 1
+            fi
           fi
       
           echo "Generated TAG: $TAG"
           echo "TAG=$TAG" >> $GITHUB_ENV
-          APP_NAME: ${{ inputs.APP_NAME }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
         env:
           AWS_REGION: ${{ secrets.AWS_REGION }}
+    
     
       # Set Image Tag
       - name: Set Image Tag
