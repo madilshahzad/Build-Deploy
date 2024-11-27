@@ -66,14 +66,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
-      - name: Checkout code from another repository
-        uses: actions/checkout@v2
-        with:
-          repository: madilshahzad/java-web-app-eks-github-actions # Target repository
-          ref: feature-1                                          # Target branch or tag
-          token: ${{ secrets.PAT }}                               # Personal Access Token for authentication
-          path: another-repo                                      # Target directory for the repository
+      - name: Checkout Repository
+        uses: actions/checkout@v2 
     
 
       - name: Configure AWS Credentials
