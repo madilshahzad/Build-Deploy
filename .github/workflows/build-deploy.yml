@@ -88,37 +88,33 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      # Get the Latest Image Tag from ECR
       - name: Get the latest tag
         id: latest-tag
         run: |
-          # Fetch the latest tag
+          # Fetch the latest tag or set a default if none exist
           LATEST_TAG=$(aws ecr describe-images \
             --repository-name ${{ secrets.ECR_REPOSITORY }} \
             --region ${{ secrets.AWS_REGION }} \
             --query 'sort_by(imageDetails,&imagePushedAt)[-1].imageTags[0]' \
-            --output text)
+            --output text || echo "None")
       
           # Debug the fetched tag
-          echo "Fetched LATEST_TAG: $LATEST_TAG"
+          echo "LATEST_TAG fetched: $LATEST_TAG"
       
-          # Check for invalid or empty values
+          # Determine the new tag
           if [ "$LATEST_TAG" == "None" ] || [ -z "$LATEST_TAG" ]; then
             TAG="v1"
           else
-            # Ensure the tag starts with 'v' and increment the numeric part
-            if [[ "$LATEST_TAG" =~ ^v[0-9]+$ ]]; then
-              TAG="v$((${LATEST_TAG#v} + 1))"
-            else
-              echo "Error: Invalid tag format detected in LATEST_TAG: $LATEST_TAG"
-              exit 1
-            fi
+            # Extract the numeric part and increment
+            NUM=$(echo "$LATEST_TAG" | grep -o '[0-9]*')
+            TAG="v$((NUM + 1))"
           fi
       
           echo "Generated TAG: $TAG"
           echo "TAG=$TAG" >> $GITHUB_ENV
         env:
           AWS_REGION: ${{ secrets.AWS_REGION }}
+      
     
     
       # Set Image Tag
