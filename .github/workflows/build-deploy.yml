@@ -34,7 +34,8 @@ on:
       IMAGE_TAG_DEPLOY:
         description: Image Tag to be deployed
         value: ${{ jobs.build_push_docker.outputs.IMAGE_TAG }}
-
+        
+  workflow_dispatch: # Add workflow_dispatch trigger
   repository_dispatch: # Add repository_dispatch trigger
     types:
       - trigger-build # Custom event type name
