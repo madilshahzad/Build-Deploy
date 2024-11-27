@@ -130,4 +130,5 @@ jobs:
           file: ${{ inputs.DOCKERFILE_PATH }}
           push: true
           tags: |
-            ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:${{ env.APP_NAME }}-${{ env.TAG }}
+            ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:${{ env.APP_NAME }}${{ env.TAG }}
+    
