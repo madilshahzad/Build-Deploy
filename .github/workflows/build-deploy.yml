@@ -71,14 +71,6 @@ jobs:
           path: another-repo                                      # Target directory for the repository
     
 
-      - name: Install xmllint
-        run: sudo apt-get update && sudo apt-get install -y libxml2-utils
-
-      - name: Extract Artifact ID from pom.xml
-        id: extract-artifact-id
-        run: |
-          APP_NAME=$(xmllint --xpath '/*[local-name()="project"]/*[local-name()="artifactId"]/text()' pom.xml)
-          echo "APP_NAME=$APP_NAME" >> $GITHUB_ENV
       # AWS Authentication
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v3
