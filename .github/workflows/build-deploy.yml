@@ -10,6 +10,7 @@ on:
       APP_NAME:
         description: Application Name
         required: true
+        default: "java-web-app"
       CONTEXT_PATH:
         description: Docker build context
         required: false
@@ -17,15 +18,19 @@ on:
       CODE_REPO:
         description: Code repository URL
         required: true
+        default: "madilshahzad/web-app.git"
       HELM_RELEASE_NAME:
         description: Helm release name
         required: true
+        default: "java-web-app"
       HELM_CHART_PATH:
         description: Path to the Helm chart directory
         required: true
-      KUBE_CONFIG_PATH:
-        description: Kubernetes config path
+        default: "./java-web-app"
+      EKS_CLUSTER_NAME:
+        description: EKS Cluster Name
         required: true
+        default: "eks-cluster"
 
 permissions:
   id-token: write
@@ -57,10 +62,19 @@ jobs:
       - name: Get Image Tag from Build and Push Job
         run: echo "Image Tag: ${{ needs.build-and-push.outputs.IMAGE_TAG_DEPLOY }}"
 
-      - name: Set Up Kubernetes Config
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ secrets.ROLE_NAME }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Update Kubeconfig for EKS
         run: |
-          echo "${{ secrets.KUBE_CONFIG_PATH }}" > ~/.kube/config
-          chmod 600 ~/.kube/config
+          aws eks update-kubeconfig \
+            --region ${{ secrets.AWS_REGION }} \
+            --name ${{ github.event.inputs.EKS_CLUSTER_NAME }} \
+            --role-arn arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ secrets.ROLE_NAME }} \
+            --alias eks-cluster
 
       - name: Deploy Using Helm
         run: |
