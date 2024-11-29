@@ -57,41 +57,13 @@ jobs:
 
   deploy:
     needs: build-and-push
-    runs-on: ubuntu-latest
-    steps:
-      - name: Get Image Tag from Build and Push Job
-        run: 'echo "Using Image Tag: ${{ needs.build-and-push.outputs.IMAGE_TAG_DEPLOY }}"'
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v3
-        with:
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GitHub-Actions
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Update Kubeconfig for EKS
-        run: |
-          aws eks update-kubeconfig \
-            --region ${{ secrets.AWS_REGION }} \
-            --name ${{ github.event.inputs.EKS_CLUSTER_NAME }} \
-            --role-arn arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GitHub-Actions \
-            --alias eks-cluster
-
-      - name: Verify Cluster
-        run: kubectl get nodes
-
-      - name: Clone Helm Chart Repository
-        run: |
-          git clone https://github.com/madilshahzad/helm_charts.git
-          echo "Cloned Helm Chart Repository"
-
-      - name: Navigate to Helm Chart Directory
-        working-directory: ./helm_charts/${{ github.event.inputs.HELM_CHART_PATH }}
-        run: |
-          echo "Navigated to Helm Chart Directory"
-
-      - name: Deploy Using Helm
-        working-directory: ./helm_charts/${{ github.event.inputs.HELM_CHART_PATH }}
-        run: |
-          helm upgrade --install ${{ github.event.inputs.HELM_RELEASE_NAME }} ./ \
-            --set image.repository=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }} \
-            --set image.tag=${{ needs.build-and-push.outputs.IMAGE_TAG_DEPLOY }}
+    uses: madilshahzad/reusable-template/.github/workflows/kubernetes-deployment.yml@main
+    with:
+      HELM_RELEASE_NAME: ${{ github.event.inputs.HELM_RELEASE_NAME }}
+      HELM_CHART_PATH: ${{ github.event.inputs.HELM_CHART_PATH }}
+      EKS_CLUSTER_NAME: ${{ github.event.inputs.EKS_CLUSTER_NAME }}
+      IMAGE_REPOSITORY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}
+      IMAGE_TAG: ${{ needs.build-and-push.outputs.IMAGE_TAG_DEPLOY }}
+    secrets:
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
