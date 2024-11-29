@@ -14,13 +14,61 @@ on:
         description: Docker build context
         required: false
         default: "./"
-        
+      CODE_REPO:
+        description: Code repository URL
+        required: true
+      HELM_RELEASE_NAME:
+        description: Helm release name
+        required: true
+      HELM_CHART_PATH:
+        description: Path to the Helm chart directory
+        required: true
+      KUBE_CONFIG_PATH:
+        description: Path to Kubernetes config file
+        required: true
+
 permissions: 
   id-token: write
   contents: read
 
 jobs:
+  maven-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.inputs.CODE_REPO }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'  
+          distribution: 'temurin' 
+
+      - name: Cache Maven Dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository  
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}  
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Build with Maven
+        run: mvn clean install -DskipTests=true  
+
+      - name: Run Tests with Maven
+        run: mvn test
+
+      - name: Upload JAR Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: app-jar
+          path: target/*.jar  # Adjust this path if your JAR is elsewhere
+
   build_and_push:
+    needs: maven-build
     uses: madilshahzad/reusable-template/.github/workflows/build-push.yml@main
     with:
       DOCKERFILE_PATH: ${{ github.event.inputs.DOCKERFILE_PATH }}
@@ -36,10 +84,18 @@ jobs:
     needs: build_and_push
     runs-on: ubuntu-latest
     steps:
-      - name: Get Output from Build and Push Job
-        run: "echo 'Image Tag: ${{ needs.build_and_push.outputs.IMAGE_TAG_DEPLOY }}'"
+      - name: Get Image Tag
+        run: echo "Image Tag: ${{ needs.build_and_push.outputs.IMAGE_TAG_DEPLOY }}"
 
-      - name: Deploy Placeholder
+      - name: Set Up Kubernetes Config
         run: |
-          echo "Deploying application with image tag:"
-          echo "${{ needs.build_and_push.outputs.IMAGE_TAG_DEPLOY }}"
+          echo "${{ secrets.KUBE_CONFIG_PATH }}" > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Deploy Using Helm
+        run: |
+          helm upgrade --install ${{ github.event.inputs.HELM_RELEASE_NAME }} \
+            ${{ github.event.inputs.HELM_CHART_PATH }} \
+            --set image.repository=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }} \
+            --set image.tag=${{ needs.build_and_push.outputs.IMAGE_TAG_DEPLOY }} \
+            --kubeconfig ~/.kube/config
