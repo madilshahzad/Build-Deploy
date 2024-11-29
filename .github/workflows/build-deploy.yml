@@ -31,6 +31,10 @@ on:
         description: EKS Cluster Name
         required: true
         default: "eks-cluster"
+      ECR_REPOSITORY:
+        description: ECR Repository Name
+        required: true
+        default: "211125460769.dkr.ecr.us-east-1.amazonaws.com/java-web-app"
 
 permissions:
   id-token: write
@@ -62,7 +66,7 @@ jobs:
       HELM_RELEASE_NAME: ${{ github.event.inputs.HELM_RELEASE_NAME }}
       HELM_CHART_PATH: ${{ github.event.inputs.HELM_CHART_PATH }}
       EKS_CLUSTER_NAME: ${{ github.event.inputs.EKS_CLUSTER_NAME }}
-      IMAGE_REPOSITORY: ${{ needs.build-and-push.outputs.IMAGE_TAG_DEPLOY }}
+      IMAGE_REPOSITORY: ${{ github.event.inputs.ECR_REPOSITORY }}
       IMAGE_TAG: ${{ needs.build-and-push.outputs.IMAGE_TAG_DEPLOY }}
     secrets:
       AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
