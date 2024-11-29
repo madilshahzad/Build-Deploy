@@ -1,18 +1,34 @@
-name: Deploy Helm Chart to EKS
+name: Build and Deploy Workflow
 
 on:
   workflow_dispatch:
     inputs:
+      DOCKERFILE_PATH:
+        description: Path to the Dockerfile
+        required: false
+        default: "./Dockerfile"
+      APP_NAME:
+        description: Application Name
+        required: true
+        default: "java-web-app"
+      CONTEXT_PATH:
+        description: Docker build context
+        required: false
+        default: "./"
+      CODE_REPO:
+        description: Code repository URL
+        required: true
+        default: "madilshahzad/web-app"
       HELM_RELEASE_NAME:
         description: Helm release name
         required: true
         default: "java-web-app"
-      AWS_REGION:
-        description: AWS region
+      HELM_CHART_PATH:
+        description: Path to the Helm chart directory
         required: true
-        default: "us-east-1"
+        default: "helm_charts/java-web-app"
       EKS_CLUSTER_NAME:
-        description: EKS cluster name
+        description: EKS Cluster Name
         required: true
         default: "eks-cluster"
 
@@ -21,48 +37,59 @@ permissions:
   contents: read
 
 jobs:
-  build-and-push:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Placeholder for Build and Push Job
-        # Replace this with your actual build and push logic
-        run: echo "Simulating build and push step..."
-        outputs:
-          IMAGE_TAG_DEPLOY: "v1.0.0" # Replace with actual output from your build logic
+  maven-build:
+    uses: madilshahzad/reusable-template/.github/workflows/build-maven.yml@main
+    with:
+      CODE_REPO: ${{ github.event.inputs.CODE_REPO }}
 
-  deploy-helm:
+  build-and-push:
+    needs: maven-build
+    uses: madilshahzad/reusable-template/.github/workflows/build-push.yml@main
+    with:
+      DOCKERFILE_PATH: ${{ github.event.inputs.DOCKERFILE_PATH }}
+      APP_NAME: ${{ github.event.inputs.APP_NAME }}
+      CONTEXT_PATH: ${{ github.event.inputs.CONTEXT_PATH }}
+    secrets:
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      ROLE_NAME: ${{ secrets.ROLE_NAME }}
+      ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+
+  deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
-      # Step 1: Configure AWS credentials
+      - name: Get Image Tag from Build and Push Job
+        run: echo "Using Image Tag: ${{ needs.build-and-push.outputs.IMAGE_TAG_DEPLOY }}"
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
-          role-to-assume: arn:aws:iam::211125460769:role/GitHub-Actions
-          aws-region: ${{ github.event.inputs.AWS_REGION }}
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GitHub-Actions
+          aws-region: ${{ secrets.AWS_REGION }}
 
-      # Step 2: Update kubeconfig for EKS
-      - name: Update kubeconfig for EKS
+      - name: Update Kubeconfig for EKS
         run: |
           aws eks update-kubeconfig \
-            --region ${{ github.event.inputs.AWS_REGION }} \
+            --region ${{ secrets.AWS_REGION }} \
             --name ${{ github.event.inputs.EKS_CLUSTER_NAME }} \
-            --role-arn arn:aws:iam::211125460769:role/GitHub-Actions
+            --role-arn arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GitHub-Actions \
+            --alias eks-cluster
 
-      # Step 3: Clone Helm Chart Repository
+      - name: Verify Cluster
+        run: kubectl get nodes
+
       - name: Checkout Helm Chart Repository
         uses: actions/checkout@v2
         with:
           repository: madilshahzad/helm_charts
           ref: main
 
-      # Step 4: Navigate to Helm Chart Directory
       - name: Navigate to Helm Chart Directory
-        run: cd helm_charts/java-web-app
+        run: cd ${{ github.event.inputs.HELM_CHART_PATH }}
 
-      # Step 5: Deploy Using Helm
       - name: Deploy Using Helm
         run: |
           helm upgrade --install ${{ github.event.inputs.HELM_RELEASE_NAME }} ./ \
-            --set image.repository=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ github.event.inputs.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }} \
+            --set image.repository=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }} \
             --set image.tag=${{ needs.build-and-push.outputs.IMAGE_TAG_DEPLOY }}
