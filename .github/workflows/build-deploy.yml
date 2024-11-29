@@ -62,7 +62,7 @@ jobs:
       HELM_RELEASE_NAME: ${{ github.event.inputs.HELM_RELEASE_NAME }}
       HELM_CHART_PATH: ${{ github.event.inputs.HELM_CHART_PATH }}
       EKS_CLUSTER_NAME: ${{ github.event.inputs.EKS_CLUSTER_NAME }}
-      IMAGE_REPOSITORY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}
+      IMAGE_REPOSITORY: ${{ needs.build-and-push.outputs.IMAGE_TAG_DEPLOY }}
       IMAGE_TAG: ${{ needs.build-and-push.outputs.IMAGE_TAG_DEPLOY }}
     secrets:
       AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
