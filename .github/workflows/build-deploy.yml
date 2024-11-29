@@ -60,7 +60,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Get Image Tag from Build and Push Job
-        run: 'echo "Using Image Tag: ${{ needs.build-and-push.outputs.IMAGE_TAG_DEPLOY }}"'
+        run: echo "Using Image Tag: ${{ needs.build-and-push.outputs.IMAGE_TAG_DEPLOY }}"
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v3
@@ -78,6 +78,12 @@ jobs:
 
       - name: Verify Cluster
         run: kubectl get nodes
+
+      - name: Clone Helm Chart Repository
+        run: |
+          git clone https://github.com/madilshahzad/helm_charts.git
+          cd helm_charts
+          echo "Cloned Helm Chart Repository"
 
       - name: Navigate to Helm Chart Directory
         working-directory: helm_charts/${{ github.event.inputs.HELM_CHART_PATH }}
