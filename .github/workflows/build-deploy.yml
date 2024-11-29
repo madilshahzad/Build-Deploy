@@ -82,16 +82,15 @@ jobs:
       - name: Clone Helm Chart Repository
         run: |
           git clone https://github.com/madilshahzad/helm_charts.git
-          cd helm_charts
           echo "Cloned Helm Chart Repository"
 
       - name: Navigate to Helm Chart Directory
-        working-directory: helm_charts/${{ github.event.inputs.HELM_CHART_PATH }}
+        working-directory: ./helm_charts/${{ github.event.inputs.HELM_CHART_PATH }}
         run: |
           echo "Navigated to Helm Chart Directory"
 
       - name: Deploy Using Helm
-        working-directory: helm_charts/${{ github.event.inputs.HELM_CHART_PATH }}
+        working-directory: ./helm_charts/${{ github.event.inputs.HELM_CHART_PATH }}
         run: |
           helm upgrade --install ${{ github.event.inputs.HELM_RELEASE_NAME }} ./ \
             --set image.repository=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }} \
