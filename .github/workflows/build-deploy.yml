@@ -60,7 +60,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Get Image Tag from Build and Push Job
-        run: "echo "Using Image Tag: ${{ needs.build-and-push.outputs.IMAGE_TAG_DEPLOY }}""
+        run: 'echo "Using Image Tag: ${{ needs.build-and-push.outputs.IMAGE_TAG_DEPLOY }}"'
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v3
