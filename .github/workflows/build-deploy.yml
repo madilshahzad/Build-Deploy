@@ -68,6 +68,7 @@ jobs:
       EKS_CLUSTER_NAME: ${{ github.event.inputs.EKS_CLUSTER_NAME }}
       IMAGE_REPOSITORY: ${{ github.event.inputs.ECR_REPOSITORY_URL }}
       IMAGE_TAG: ${{ needs.build-and-push.outputs.IMAGE_TAG_DEPLOY }}
+      APP_NAME: ${{ github.event.inputs.APP_NAME }}
  
     secrets:
       AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
