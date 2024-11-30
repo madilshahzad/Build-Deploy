@@ -76,3 +76,4 @@ jobs:
       ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
       ECR_REPOSITORY_URL: ${{ secrets.ECR_REPOSITORY_URL }}
       ROLE_NAME: ${{ secrets.ROLE_NAME }}
+      
