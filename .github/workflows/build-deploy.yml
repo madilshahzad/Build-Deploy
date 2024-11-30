@@ -34,7 +34,7 @@ on:
       ECR_REPOSITORY_URL:
         description: Full ECR repository URL
         required: true
-        default: "211125460769.dkr.ecr.us-east-1.amazonaws.com"
+        default: "211125460769.dkr.ecr.us-east-1.amazonaws.com/java-web-app"
 
 permissions:
   id-token: write
